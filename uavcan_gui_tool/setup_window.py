@@ -27,7 +27,13 @@ assert DEFAULT_BAUD_RATE in STANDARD_BAUD_RATES
 
 
 RUNNING_ON_LINUX = 'linux' in sys.platform.lower()
+RUNNING_ON_WINDOWS = 'win' in sys.platform.lower()
 
+if RUNNING_ON_WINDOWS:
+    try:
+        import candle_driver
+    except ImportError:
+        candle_driver = None
 
 logger = getLogger(__name__)
 
@@ -87,6 +93,15 @@ def list_ifaces():
         out = OrderedDict()
         for port in QtSerialPort.QSerialPortInfo.availablePorts():
             out[port.description()] = port.systemLocation()
+
+        if RUNNING_ON_WINDOWS and candle_driver:
+            devices = candle_driver.list_devices()
+            for device in devices:
+                device_name = device.name()
+                channels = device.channel_count()
+                for channel in range(channels):
+                    name = '{}#{}'.format(device_name, channel)
+                    out[name] = name
 
         return out
 
